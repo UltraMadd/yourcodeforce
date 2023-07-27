@@ -104,10 +104,13 @@ def eul(eul_name: str = "euler.txt") -> None:
         with open("problem_%s.py" % problem_number, "w") as file:
             file.write(TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
 
+def usage():
+    print("Usage: python %s <eul|new> [options]" % argv[0])
+
 def main():
     argv = sys.argv
     if len(argv) < 2:
-        print("Usage: python %s <eul|new> [options]" % argv[0])
+        usage()
         return
     if argv[1] == 'eul':
         if len(argv) == 3:
@@ -117,7 +120,7 @@ def main():
     elif argv[1] == 'new':
         new()
     else:
-        print("Usage: python %s <eul|new> " % argv[0])
+        usage()
 
 if __name__ == "__main__":
     main()
