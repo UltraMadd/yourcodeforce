@@ -105,7 +105,7 @@ def eul(eul_name: str = "euler.txt") -> None:
             file.write(TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
 
 def usage():
-    print("Usage: python %s <eul|new> [options]" % argv[0])
+    print("Usage: python %s <eul|new> [options]" % sys.argv[0])
 
 def main():
     argv = sys.argv
