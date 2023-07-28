@@ -11,7 +11,7 @@ Small python script that allows you to solve problems offline
 `pip install ycf`
 
 ### Usage
-`ycf --help`
+`ycf help`
 
 
 ## Todos
