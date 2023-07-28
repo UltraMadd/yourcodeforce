@@ -1,10 +1,16 @@
 from dataclasses import dataclass
-from typing import TypeVar
 import re
-import argparse
-from typing import Callable, Dict, Optional
 import sys
-from ycf.consts import *
+from typing import Dict, Optional
+
+from ycf.consts import (
+    NUMBER_PROBLEM_DEL_REGEX,
+    C_TESTCASE_FORMAT,
+    PY_TESTCASE_FORMAT,
+    DO_YOU_WANT_TESTCAES,
+    PROBLEM,
+    PROBLEM_FORMAT,
+)
 
 
 @dataclass
@@ -31,10 +37,10 @@ class Config:
     options: Dict[str, str]
 
 
-def errprint(s: str):
+def errprint(message: str):
     print("ERROR:")
-    print(s, file=sys.stderr)
-    exit(1)
+    print(message, file=sys.stderr)
+    sys.exit(1)
 
 
 def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
@@ -42,7 +48,7 @@ def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
         answer = input(question)
         if answer.lower() in ("y", "yes"):
             return True
-        elif answer.lower() in ("n", "no"):
+        if answer.lower() in ("n", "no"):
             return False
     errprint("Too many attempts to answer on a simple yes/no question. You're dumb?")
     return False
@@ -112,7 +118,7 @@ def list_commands():
     print("new: WIP")
 
 
-def help():
+def print_help():
     usage()
     list_commands()
 
@@ -130,7 +136,7 @@ def cli():
     elif argv[1] == "new":
         new()
     elif argv[1] == "help":
-        help()
+        print_help()
     else:
         usage()
 

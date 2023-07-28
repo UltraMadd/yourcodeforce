@@ -10,7 +10,9 @@ Problem #%s
 
 <->
 """
-DO_YOU_WANT_TESTCAES = "Do you wan to create file %s with test cases for this problem y(es)/n(o)?: "
+DO_YOU_WANT_TESTCAES = (
+    "Do you wan to create file %s with test cases for this problem y(es)/n(o)?: "
+)
 PROBLEM = "problem_%s.%s"
 MD5DECL = """\
 /*
@@ -255,7 +257,9 @@ int main(int argc, char **argv) {
 }
 
 
-""" + MD5DECL.replace("%", "%%")
+""" + MD5DECL.replace(
+    "%", "%%"
+)
 PY_TESTCASE_FORMAT = """\
 # %d
 '''
@@ -287,5 +291,3 @@ def test():
 if __name__ == "__main__":
     test()
 """
-
-
