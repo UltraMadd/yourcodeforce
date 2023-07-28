@@ -7,6 +7,7 @@ setup(
     author="UMadd",
     description = "Script that helps solving problems",
     packages = ["ycf"],
+    package_data={'': ["euler.txt"]},
     entry_points={
         "console_scripts": [
             "ycf = ycf.main:main",

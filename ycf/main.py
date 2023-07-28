@@ -4,8 +4,7 @@ import re
 import argparse
 from typing import Callable, Dict, Optional
 import sys
-from consts import *
-
+from ycf.consts import *
 
 
 @dataclass
@@ -28,72 +27,34 @@ class Config:
     action: str
     options: Dict[str, str]
 
-
-V = TypeVar("V")
-def prompt_for_valid(
-        validator: Callable[[str], Optional[V]],
-        on_invalid: Callable,
-        prompter: Callable[[], str],
-        max_attempts: int = 3
-        ) -> Optional[V]:
-    for _ in range(max_attempts):
-        prompted = validator(prompter())
-        if prompted is not None:
-            on_invalid()
-        else:
-            return prompted
-
 def errprint(s: str):
     print("ERROR:")
     print(s, file=sys.stderr)
     exit(1)
 
-def yes_or_no(s: str) -> Optional[bool]:
-    if s.lower() == ("y", "yes"):
-        return True
-    if s.lower() in ("n", "no"):
-        return False
-    return None
+
 
 def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
-    prompted = prompt_for_valid(
-            validator=yes_or_no,
-            on_invalid=lambda: print("Please, answer: y(es) or n(o)"),
-            prompter=lambda: input("%s [y/n]: " % question),
-            max_attempts=max_attempts
-            )
-    if prompted:
-        return prompted
-    errprint("Wrong answer")
+    for _ in range(max_attempts):
+        answer = input(question)
+        if answer.lower() in ("y", "yes"):
+            return True
+        elif answer.lower() in ("n", "no"):
+            return False
+    errprint("Too many attempts to answer on a simple yes/no question. You're dumb?")
     return False
 
-def to_number(s: str) -> Optional[int]:
-    try:
-        return int(s)
-    except ValueError:
-        pass
-
-def valid_num(validator: Callable, n: Optional[int]) -> Optional[int]:
-    if n is None:
-        return None
-    return validator(n)
-
-
-def prompt_for_number(
-        validator: Callable[[int], Optional[int]], 
-        prompt: str = "Enter a number: ", 
-        hint: str = "Wrong number", 
-        max_attempts: int = 3
-        ) -> Optional[int]:
-    prompted = prompt_for_valid(
-            validator=lambda x: valid_num(validator, to_number(x)),
-            on_invalid=lambda: print(hint),
-            prompter=lambda: input(prompt),
-            max_attempts=max_attempts
-            )
-    if prompted:
-        return prompted
-    errprint("Wrong answer")
+def prompt_for_number(in_range: Optional[range], prompt: str = "Enter a number: ", hint: str = "Wrong number", max_attempts: int = 3) -> int:
+    for _ in range(max_attempts):
+        try:
+            number = int(input(prompt))
+        except ValueError:
+            print(hint)
+            continue
+        if in_range is not None and number in in_range:
+            return number
+    errprint("Too many attempts to enter a number")
+    return -1
 
 def new():
     pass
@@ -111,7 +72,7 @@ def eul(eul_name: str = "euler.txt") -> None:
         problems = list(map(Problem.from_raw, problems[1:]))
         problem_n = problems[-1].number
         problem_number = prompt_for_number(
-                lambda n: n in range(1, problem_n + 1),
+                range(1, problem_n + 1),
                 max_attempts=10, 
                 prompt="Enter a problem number [1, %s]: " % problem_n
                 )
@@ -119,15 +80,12 @@ def eul(eul_name: str = "euler.txt") -> None:
             raise ValueError("Wrong problem number")
         problem = problems[problem_number - 1]
         print(PROBLEM_FORMAT % (problem_number, problem.description))
-        if prompt_for_yes_no("Do you wan to create file problem_%s.py with test cases for this problem y(es)/n(o)?: " % problem_number):
-            with open("problem_%s.py" % problem_number, "w") as file:
-                file.write(PY_TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
-        if not prompt_for_yes_no("Do you wan to create file problem_%s.c with test cases for this problem y(es)/n(o)?: " % problem_number):
-            return
-        with open("problem_%s.c" % problem_number, "w") as file:
-            file.write(C_TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
-
-
+        test_files = [("py", PY_TESTCASE_FORMAT), ("c", C_TESTCASE_FORMAT)]
+        for test_file_ext, test_file_format in test_files:
+            test_file_name = PROBLEM % (problem_number, test_file_ext)
+            if prompt_for_yes_no(DO_YOU_WANT_TESTCAES % test_file_name):
+                with open(test_file_name, "w") as file:
+                    file.write(test_file_format % (problem.number, problem.description, problem.answer))
 
 def usage():
     print("Usage: python %s <eul|new|help> [options]" % sys.argv[0])
