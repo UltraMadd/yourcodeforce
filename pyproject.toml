@@ -20,3 +20,12 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/UltraMadd/yourcodeforce"
 "Bug Tracker" = "https://github.com/UltraMadd/yourcodeforce/issues"
+
+[tool.pylint.messages_control]
+disable = [
+        "missing-module-docstring",
+        "missing-class-docstring",
+        "missing-function-docstring",
+        "unspecified-encoding",
+        "consider-using-f-string"
+]
