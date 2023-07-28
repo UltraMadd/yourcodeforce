@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import TypeVar
 import re
 import argparse
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 import sys
 from consts import *
 
@@ -28,25 +29,71 @@ class Config:
     options: Dict[str, str]
 
 
-def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
+V = TypeVar("V")
+def prompt_for_valid(
+        validator: Callable[[str], Optional[V]],
+        on_invalid: Callable,
+        prompter: Callable[[], str],
+        max_attempts: int = 3
+        ) -> Optional[V]:
     for _ in range(max_attempts):
-        answer = input(question)
-        if answer.lower() in ("y", "yes"):
-            return True
-        elif answer.lower() in ("n", "no"):
-            return False
-    raise ValueError("Too many attempts to answer on a simple yes/no question. You're dumb?")
+        prompted = validator(prompter())
+        if prompted is not None:
+            on_invalid()
+        else:
+            return prompted
 
-def prompt_for_number(validator: Callable[[int], bool], prompt: str = "Enter a number: ", hint: str = "Wrong number", max_attempts: int = 3) -> int:
-    for _ in range(max_attempts):
-        try:
-            number = int(input(prompt))
-        except ValueError:
-            print(hint)
-            continue
-        if validator(number):
-            return number
-    raise ValueError("Too many attempts to enter a number")
+def errprint(s: str):
+    print("ERROR:")
+    print(s, file=sys.stderr)
+    exit(1)
+
+def yes_or_no(s: str) -> Optional[bool]:
+    if s.lower() == ("y", "yes"):
+        return True
+    if s.lower() in ("n", "no"):
+        return False
+    return None
+
+def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
+    prompted = prompt_for_valid(
+            validator=yes_or_no,
+            on_invalid=lambda: print("Please, answer: y(es) or n(o)"),
+            prompter=lambda: input("%s [y/n]: " % question),
+            max_attempts=max_attempts
+            )
+    if prompted:
+        return prompted
+    errprint("Wrong answer")
+    return False
+
+def to_number(s: str) -> Optional[int]:
+    try:
+        return int(s)
+    except ValueError:
+        pass
+
+def valid_num(validator: Callable, n: Optional[int]) -> Optional[int]:
+    if n is None:
+        return None
+    return validator(n)
+
+
+def prompt_for_number(
+        validator: Callable[[int], Optional[int]], 
+        prompt: str = "Enter a number: ", 
+        hint: str = "Wrong number", 
+        max_attempts: int = 3
+        ) -> Optional[int]:
+    prompted = prompt_for_valid(
+            validator=lambda x: valid_num(validator, to_number(x)),
+            on_invalid=lambda: print(hint),
+            prompter=lambda: input(prompt),
+            max_attempts=max_attempts
+            )
+    if prompted:
+        return prompted
+    errprint("Wrong answer")
 
 def new():
     pass
@@ -68,6 +115,8 @@ def eul(eul_name: str = "euler.txt") -> None:
                 max_attempts=10, 
                 prompt="Enter a problem number [1, %s]: " % problem_n
                 )
+        if problem_number is None:
+            raise ValueError("Wrong problem number")
         problem = problems[problem_number - 1]
         print(PROBLEM_FORMAT % (problem_number, problem.description))
         if prompt_for_yes_no("Do you wan to create file problem_%s.py with test cases for this problem y(es)/n(o)?: " % problem_number):
@@ -81,7 +130,16 @@ def eul(eul_name: str = "euler.txt") -> None:
 
 
 def usage():
-    print("Usage: python %s <eul|new> [options]" % sys.argv[0])
+    print("Usage: python %s <eul|new|help> [options]" % sys.argv[0])
+
+def list_commands():
+    print("Available commands:")
+    print("eul: Euler")
+    print("new: WIP")
+
+def help():
+    usage()
+    list_commands()
 
 def cli():
     argv = sys.argv
@@ -95,6 +153,8 @@ def cli():
             eul()
     elif argv[1] == 'new':
         new()
+    elif argv[1] == 'help':
+        help()
     else:
         usage()
 
