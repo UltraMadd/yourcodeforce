@@ -1,49 +1,10 @@
 from dataclasses import dataclass
 import re
-from typing import Callable
+import argparse
+from typing import Callable, Dict
 import sys
+from consts import *
 
-
-NUMBER_PROBLEM_DEL_REGEX = re.compile("\n=+\n")
-PROBLEM_FORMAT = """
-Problem #%s
-<->
-
-%s
-
-<->
-"""
-TESTCASE_FORMAT = """\
-# %d
-'''
-%s
-'''
-from hashlib import md5 as _test_md5_hash
-
-WRONG_ANSWER_MSG = "Wrong answer. Got: UNHASHED: %%s, HASHED: %%s, expected: HASHED: %%s. (in md5 hash, so that is not an answer)"
-ANSWER = "%s"
-
-def solve() -> str:
-    ...  # TODO solve
-
-def test():
-    ret = solve()
-    assert isinstance(ret, str)
-    hashed = _test_md5_hash(ret.encode()).hexdigest()
-    assert hashed == ANSWER, WRONG_ANSWER_MSG %% (ret, hashed, ANSWER)
-    print('''Tests passed. 
-          You're good to go. 
-          Good luck! 
-          Congratulations! 
-          Wow that's a lot of problems! 
-          You're a genius! 
-          You're a genius! 
-          I love you!
-                                                    - AI generated.''')
-
-if __name__ == "__main__":
-    test()
-"""
 
 
 @dataclass
@@ -60,6 +21,12 @@ class Problem:
         answer = answer.strip()
         description = "\n".join(map(lambda s: s.removeprefix(' ' * 3), description.split("\n")))
         return cls(number, description, answer)
+
+@dataclass
+class Config:
+    action: str
+    options: Dict[str, str]
+
 
 def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
     for _ in range(max_attempts):
@@ -96,18 +63,27 @@ def eul(eul_name: str = "euler.txt") -> None:
         problems = content.split("\nProblem ")
         problems = list(map(Problem.from_raw, problems[1:]))
         problem_n = problems[-1].number
-        problem_number = prompt_for_number(lambda n: n in range(1, problem_n + 1), max_attempts=10, prompt="Enter a problem number [1, %s]: " % problem_n)
+        problem_number = prompt_for_number(
+                lambda n: n in range(1, problem_n + 1),
+                max_attempts=10, 
+                prompt="Enter a problem number [1, %s]: " % problem_n
+                )
         problem = problems[problem_number - 1]
         print(PROBLEM_FORMAT % (problem_number, problem.description))
-        if not prompt_for_yes_no("Do you wan to create file problem_%s.py with test cases for this problem y(es)/n(o)?: " % problem_number):
+        if prompt_for_yes_no("Do you wan to create file problem_%s.py with test cases for this problem y(es)/n(o)?: " % problem_number):
+            with open("problem_%s.py" % problem_number, "w") as file:
+                file.write(PY_TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
+        if not prompt_for_yes_no("Do you wan to create file problem_%s.c with test cases for this problem y(es)/n(o)?: " % problem_number):
             return
-        with open("problem_%s.py" % problem_number, "w") as file:
-            file.write(TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
+        with open("problem_%s.c" % problem_number, "w") as file:
+            file.write(C_TESTCASE_FORMAT % (problem.number, problem.description, problem.answer))
+
+
 
 def usage():
     print("Usage: python %s <eul|new> [options]" % sys.argv[0])
 
-def main():
+def cli():
     argv = sys.argv
     if len(argv) < 2:
         usage()
@@ -121,6 +97,10 @@ def main():
         new()
     else:
         usage()
+
+
+def main():
+    cli()
 
 if __name__ == "__main__":
     main()
