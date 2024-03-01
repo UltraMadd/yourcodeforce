@@ -1,7 +1,7 @@
 import re
 
 
-NUMBER_PROBLEM_DEL_REGEX = re.compile("\n=+\n")
+
 PROBLEM_FORMAT = """
 Problem #%s
 <->

@@ -1,16 +1,17 @@
 from dataclasses import dataclass
 import re
-import sys
+from sys import argv
 from typing import Dict, Optional
 
 from ycf.consts import (
-    NUMBER_PROBLEM_DEL_REGEX,
     C_TESTCASE_FORMAT,
     PY_TESTCASE_FORMAT,
     DO_YOU_WANT_TESTCAES,
     PROBLEM,
     PROBLEM_FORMAT,
 )
+
+NUMBER_PROBLEM_DEL_REGEX = re.compile("\n=+\n")
 
 
 @dataclass
@@ -31,21 +32,15 @@ class Problem:
         return cls(number, description, answer)
 
 
-@dataclass
-class Config:
-    action: str
-    options: Dict[str, str]
-
-
 def errprint(message: str):
     print("ERROR:")
     print(message, file=sys.stderr)
     sys.exit(1)
 
 
-def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
+def prompt_for_yes_no(prompt: str, max_attempts: int = 10) -> bool:
     for _ in range(max_attempts):
-        answer = input(question)
+        answer = input(prompt)
         if answer.lower() in ("y", "yes"):
             return True
         if answer.lower() in ("n", "no"):
@@ -56,66 +51,55 @@ def prompt_for_yes_no(question: str, max_attempts: int = 3) -> bool:
 
 def prompt_for_number(
     in_range: Optional[range],
-    prompt: str = "Enter a number: ",
-    hint: str = "Wrong number",
-    max_attempts: int = 3,
-) -> int:
+    prompt: str,
+    max_attempts: int = 10,
+) -> Optional[int]:
     for _ in range(max_attempts):
         try:
             number = int(input(prompt))
         except ValueError:
-            print(hint)
             continue
-        if in_range is not None and number in in_range:
+        if in_range is None or number in in_range:
             return number
     errprint("Too many attempts to enter a number")
-    return -1
-
-
-def new():
-    pass
+    return None
 
 
 def eul(eul_name: str = "euler.txt") -> None:
-    """
-    Problems from Project Euler
-    :param eul_name: file name with problems to read from
-    :type eul_name: str
-    """
     problems = []
-    with open(eul_name) as file:
-        content = file.read()
-        problems = content.split("\nProblem ")
-        problems = list(map(Problem.from_raw, problems[1:]))
-        problem_n = problems[-1].number
+    with open(eul_name) as test_file:
+        problems = test_file.read().split("\nProblem ")
+        problems = [Problem.from_raw(problem) for problem in problems[1:]]
+        problem_len = problems[-1].number
+
         problem_number = prompt_for_number(
-            range(1, problem_n + 1),
-            max_attempts=10,
-            prompt="Enter a problem number [1, %s]: " % problem_n,
+            in_range=range(1, problem_len + 1),
+            prompt=f"Enter a problem number [1, {problem_len}]: " 
         )
         if problem_number is None:
             raise ValueError("Wrong problem number")
+        
         problem = problems[problem_number - 1]
         print(PROBLEM_FORMAT % (problem_number, problem.description))
+
         test_files = [("py", PY_TESTCASE_FORMAT), ("c", C_TESTCASE_FORMAT)]
         for test_file_ext, test_file_format in test_files:
             test_file_name = PROBLEM % (problem_number, test_file_ext)
             if prompt_for_yes_no(DO_YOU_WANT_TESTCAES % test_file_name):
-                with open(test_file_name, "w") as file:
-                    file.write(
+                with open(test_file_name, "w") as test_file:
+                    test_file.write(
                         test_file_format
                         % (problem.number, problem.description, problem.answer)
                     )
 
 
 def usage():
-    print("Usage: python %s <eul|new|help> [options]" % sys.argv[0])
+    print("Usage: %s <eul|help> [options]" % sys.argv[0])
 
 
 def list_commands():
-    print("Available commands:")
-    print("eul: Euler")
-    print("new: WIP")
+    print("Available commands:\n"\
+          "eul: Euler")
 
 
 def print_help():
@@ -124,7 +108,6 @@ def print_help():
 
 
 def cli():
-    argv = sys.argv
     if len(argv) < 2:
         usage()
         return
@@ -133,8 +116,6 @@ def cli():
             eul(argv[2])
         else:
             eul()
-    elif argv[1] == "new":
-        new()
     elif argv[1] == "help":
         print_help()
     else:
