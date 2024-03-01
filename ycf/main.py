@@ -1,7 +1,8 @@
-from dataclasses import dataclass
 import re
+import sys
 from sys import argv
-from typing import Dict, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 from ycf.consts import (
     C_TESTCASE_FORMAT,
@@ -74,11 +75,11 @@ def eul(eul_name: str = "euler.txt") -> None:
 
         problem_number = prompt_for_number(
             in_range=range(1, problem_len + 1),
-            prompt=f"Enter a problem number [1, {problem_len}]: " 
+            prompt=f"Enter a problem number [1, {problem_len}]: "
         )
         if problem_number is None:
             raise ValueError("Wrong problem number")
-        
+
         problem = problems[problem_number - 1]
         print(PROBLEM_FORMAT % (problem_number, problem.description))
 
