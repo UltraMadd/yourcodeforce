@@ -1,7 +1,3 @@
-import re
-
-
-
 PROBLEM_FORMAT = """
 Problem #%s
 <->
